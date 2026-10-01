@@ -1,0 +1,44 @@
+.page {
+  min-height: 100vh;
+  padding: 32px;
+  background:
+    radial-gradient(ellipse at top, #1a2332 0%, #0e1218 55%);
+  color: #e8edf2;
+  font-family: var(--font-geist-sans), sans-serif;
+}
+
+.header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.title {
+  margin: 0 0 6px;
+  font-size: 1.6rem;
+  font-weight: 650;
+  letter-spacing: -0.02em;
+}
+
+.muted {
+  margin: 0;
+  color: #9aa8b6;
+}
+
+.logout {
+  padding: 10px 14px;
+  border: 1px solid #334155;
+  border-radius: 8px;
+  background: #141a22;
+  color: #e8edf2;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.logout:hover {
+  border-color: #3d8bfd;
+  color: #fff;
+}

@@ -1,0 +1,11 @@
+node_modules
+dist
+.env
+.env.local
+web/.env.local
+web/node_modules
+web/.next
+src/generated/prisma
+.DS_Store
+*.log
+.idea

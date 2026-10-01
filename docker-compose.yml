@@ -1,0 +1,15 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: adminpanel-postgres
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: adminpanel
+      POSTGRES_PASSWORD: adminpanel
+      POSTGRES_DB: adminpanel
+    volumes:
+      - adminpanel_pg_data:/var/lib/postgresql/data
+
+volumes:
+  adminpanel_pg_data:
