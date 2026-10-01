@@ -61,6 +61,12 @@
   margin-bottom: 20px;
 }
 
+.cardHeaderActions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
 .cardTitle {
   margin: 0;
   font-size: 1.1rem;
@@ -75,6 +81,21 @@
   border: 1px solid #334155;
   color: #9aa8b6;
   font-size: 0.8rem;
+}
+
+.add {
+  padding: 8px 14px;
+  border: none;
+  border-radius: 8px;
+  background: #3d8bfd;
+  color: #fff;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.add:hover {
+  background: #2f7aef;
 }
 
 .tableWrap {
@@ -282,4 +303,33 @@
 
 .save:hover {
   background: #2f7aef;
+}
+
+.confirmDelete {
+  padding: 10px 14px;
+  border: none;
+  border-radius: 8px;
+  background: #c23b3b;
+  color: #fff;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.confirmDelete:hover:not(:disabled) {
+  background: #a83232;
+}
+
+.confirmDelete:disabled,
+.cancel:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.error {
+  margin: 12px 0 0;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: #3a1a1a;
+  color: #ffb4b4;
+  font-size: 0.9rem;
 }

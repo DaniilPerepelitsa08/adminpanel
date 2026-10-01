@@ -1,3 +1,5 @@
+import {Role} from "@prisma/client";
+
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 export type PublicUser = {
@@ -79,21 +81,72 @@ export async function getAllUsers(): Promise<PublicUser[]> {
 
 export async function updateUser(
     id: number,
-    name: string
-): Promise<LoginResponse> {
+    input: { name?: string; role?: Role }
+): Promise<PublicUser> {
     const token = localStorage.getItem("token");
+    if (!token) {
+        throw new Error("Not authenticated!");
+    }
+
     const response = await fetch(`${API_URL}/users/update/${id}`, {
         method: "PATCH",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}`,},
-        body: JSON.stringify({ id, name }),
+        headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(input),
     });
 
     if (!response.ok) {
         const data = (await response.json().catch(() => null)) as
             | { message?: string }
             | null;
-        throw new Error(data?.message ?? "Registration failed");
+        throw new Error(data?.message ?? "Failed to update user!");
     }
 
     return response.json();
+}
+
+export async function deleteUser(id: number): Promise<void> {
+    const token = localStorage.getItem("token");
+    if (!token) {
+        throw new Error("Not authenticated!");
+    }
+
+    const response = await fetch(`${API_URL}/users/${id}`, {
+        method: "DELETE",
+        headers: {
+            Authorization: `Bearer ${token}`,
+        },
+    });
+
+    if (!response.ok) {
+        const data = (await response.json().catch(() => null)) as
+            | { message?: string }
+            | null;
+        throw new Error(data?.message ?? "Failed to delete user!");
+    }
+}
+
+export async function createUser(name: string, email: string, password: string, role: string): Promise<void> {
+    const token = localStorage.getItem("token");
+    if (!token) {
+        throw new Error("Not authenticated!");
+    }
+
+    const response = await fetch(`${API_URL}/users/create`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ name, email, password, role })
+    });
+
+    if (!response.ok) {
+        const data = (await response.json().catch(() => null)) as
+            | { message?: string }
+            | null;
+        throw new Error(data?.message ?? "Failed to delete user!");
+    }
 }

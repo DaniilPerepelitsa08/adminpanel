@@ -36,7 +36,7 @@ export function createUsersRouter(
       }
 
       const id = Number(request.params.id);
-      const updated = await userService.update(id, request.user, request.body.name);
+      const updated = await userService.update(id, request.user, request.body);
 
       response.json(updated);
     } catch (error) {
@@ -60,6 +60,28 @@ export function createUsersRouter(
 
       const id = Number(request.params.id);
       await userService.delete(id, request.user);
+
+      response.status(204).send();
+    } catch (error) {
+      if (error instanceof AppError) {
+        response.status(error.statusCode).json({ message: error.message });
+
+        return;
+      }
+
+      throw error;
+    }
+  });
+
+  router.post("/users/create", auth, async (request: AuthRequest, response) => {
+    try {
+      if (!request.user) {
+        response.status(401).json({ message: "Unauthorized" });
+
+        return;
+      }
+
+      await userService.create(request.body, request.user);
 
       response.status(204).send();
     } catch (error) {

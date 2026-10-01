@@ -2,10 +2,10 @@ import bcrypt from "bcrypt";
 import { AppError } from "../domain/errors";
 import { PublicUser } from "../domain/types";
 import { signToken } from "../lib/jwt";
-import { PrismaUserRepository } from "../repositories/prisma-user.repository";
+import { UserRepository } from "../repositories/user.repository";
 
 export class AuthService {
-  constructor(private readonly repo: PrismaUserRepository) {}
+  constructor(private readonly repo: UserRepository) {}
 
   async login(
     email: string | undefined,

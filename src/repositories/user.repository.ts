@@ -1,9 +1,10 @@
 import { prisma } from "../lib/prisma";
 import { UpdateUserInput, User } from "../domain/types";
+import {Role} from "@prisma/client";
 
 type CreateUserInput = Omit<User, "id" | "createdAt">;
 
-export class PrismaUserRepository {
+export class UserRepository {
   async findAll() {
     return prisma.user.findMany({
       orderBy: { name: "asc" },
@@ -29,10 +30,10 @@ export class PrismaUserRepository {
     });
   }
 
-  async update(id: number, name: string) {
+  async update(id: number, input: { name?: string; role?: Role }) {
     return prisma.user.update({
       where: { id },
-      data: { name },
+      data: input,
     });
   }
 

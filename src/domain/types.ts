@@ -1,6 +1,6 @@
 export type Role = "superadmin" | "admin" | "user";
 
-export type Permission = "users.read" | "users.update" | "users.delete";
+export type Permission = "users.read" | "users.update" | "users.delete" | "users.create";
 
 export interface User {
     id: number;
