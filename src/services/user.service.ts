@@ -36,18 +36,23 @@ export class UserService {
   async update(
     id: number,
     actor: User,
-    data: UpdateUserInput
+    name: string
   ): Promise<PublicUser> {
     if (!can(actor.role, "users.update")) {
       throw new AppError("Missing permission: users.update", 403);
     }
 
     const user = await this.users.findById(id);
+
     if (!user) {
       throw new AppError(`User ${id} not found`, 404);
     }
 
-    const updated = await this.users.update(id, data);
+    if (!name) {
+      throw new AppError("Name can't empty!")
+    }
+
+    const updated = await this.users.update(id, name);
     return toPublicUser(updated);
   }
 

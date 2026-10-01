@@ -6,7 +6,15 @@ import { login } from "@/lib/api";
 import styles from "./login.module.css";
 
 export default function LoginPage() {
+    const token = localStorage.getItem("token");
+    const rawUser = localStorage.getItem("user");
     const router = useRouter();
+
+    if (token || rawUser) {
+        router.replace("/users");
+        return;
+    }
+
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [error, setError] = useState("");

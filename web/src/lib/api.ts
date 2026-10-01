@@ -48,8 +48,52 @@ export async function register(
         const data = (await res.json().catch(() => null)) as
             | { message?: string }
             | null;
-        throw new Error(data?.message ?? "Login failed");
+        throw new Error(data?.message ?? "Registration failed");
     }
 
     return res.json();
+}
+
+export async function getAllUsers(): Promise<PublicUser[]> {
+    const token = localStorage.getItem("token");
+    if (!token) {
+        throw new Error("Not authenticated!");
+    }
+
+    const response = await fetch(`${API_URL}/users/all`, {
+        method: "GET",
+        headers: {
+            Authorization: `Bearer ${token}`,
+        },
+    });
+
+    if (!response.ok) {
+        const data = (await response.json().catch(() => null)) as
+            | { message?: string }
+            | null;
+        throw new Error(data?.message ?? "Failed to fetch users!");
+    }
+
+    return response.json();
+}
+
+export async function updateUser(
+    id: number,
+    name: string
+): Promise<LoginResponse> {
+    const token = localStorage.getItem("token");
+    const response = await fetch(`${API_URL}/users/update/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}`,},
+        body: JSON.stringify({ id, name }),
+    });
+
+    if (!response.ok) {
+        const data = (await response.json().catch(() => null)) as
+            | { message?: string }
+            | null;
+        throw new Error(data?.message ?? "Registration failed");
+    }
+
+    return response.json();
 }

@@ -5,7 +5,9 @@ type CreateUserInput = Omit<User, "id" | "createdAt">;
 
 export class PrismaUserRepository {
   async findAll() {
-    return prisma.user.findMany();
+    return prisma.user.findMany({
+      orderBy: { name: "asc" },
+    });
   }
 
   async findById(id: number) {
@@ -27,10 +29,10 @@ export class PrismaUserRepository {
     });
   }
 
-  async update(id: number, data: UpdateUserInput) {
+  async update(id: number, name: string) {
     return prisma.user.update({
       where: { id },
-      data,
+      data: { name },
     });
   }
 

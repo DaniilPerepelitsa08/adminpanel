@@ -6,7 +6,14 @@ import { register } from "@/lib/api";
 import styles from "./registration.module.css";
 
 export default function RegistrationPage() {
+    const token = localStorage.getItem("token");
+    const rawUser = localStorage.getItem("user");
     const router = useRouter();
+
+    if (token || rawUser) {
+        router.replace("/users");
+        return;
+    }
 
     const [name, setName] = useState("");
     const [email, setEmail] = useState("");
