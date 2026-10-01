@@ -1,7 +1,9 @@
 import { AppError } from "../domain/errors";
 import { can } from "../domain/permissions";
 import { PublicUser, UpdateUserInput, User } from "../domain/types";
-import { PrismaUserRepository } from "../repositories/prisma-user.repository";
+import { UserRepository } from "../repositories/user.repository";
+import bcrypt from "bcrypt";
+import {Role} from "@prisma/client";
 
 function toPublicUser(user: User): PublicUser {
   const { passwordHash: _, ...rest } = user;
@@ -9,7 +11,7 @@ function toPublicUser(user: User): PublicUser {
 }
 
 export class UserService {
-  constructor(private readonly users: PrismaUserRepository) {}
+  constructor(private readonly users: UserRepository) {}
 
   async list(actor: User): Promise<PublicUser[]> {
     if (!can(actor.role, "users.read")) {
@@ -36,7 +38,7 @@ export class UserService {
   async update(
     id: number,
     actor: User,
-    name: string
+    input: { name?: string; role?: Role }
   ): Promise<PublicUser> {
     if (!can(actor.role, "users.update")) {
       throw new AppError("Missing permission: users.update", 403);
@@ -48,11 +50,11 @@ export class UserService {
       throw new AppError(`User ${id} not found`, 404);
     }
 
-    if (!name) {
+    if (!input.name) {
       throw new AppError("Name can't empty!")
     }
 
-    const updated = await this.users.update(id, name);
+    const updated = await this.users.update(id, input);
     return toPublicUser(updated);
   }
 
@@ -71,5 +73,39 @@ export class UserService {
     }
 
     await this.users.delete(id);
+  }
+
+  async create(
+      input: {
+        name?: string;
+        email?: string;
+        password?: string;
+        role?: Role;
+      },
+      actor: User
+  ): Promise<PublicUser> {
+    if (!can(actor.role, "users.create")) {
+      throw new AppError("Missing permission: users.create", 403);
+    }
+
+    const { name, email, password, role } = input;
+
+    if (!name || !email || !password || !role) {
+      throw new AppError("name, email, password and role required", 400);
+    }
+
+    const existing = await this.users.findByEmail(email);
+    if (existing) {
+      throw new AppError("User already exists", 409);
+    }
+
+    const created = await this.users.create({
+      name,
+      email,
+      passwordHash: await bcrypt.hash(password, 10),
+      role,
+    });
+
+    return toPublicUser(created);
   }
 }

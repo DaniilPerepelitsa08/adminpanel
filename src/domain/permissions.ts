@@ -1,9 +1,9 @@
 import { Permission, Role } from "./types";
 
 export const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
-    superadmin: ["users.read", "users.update", "users.delete"],
+    superadmin: ["users.read", "users.update", "users.delete", "users.create"],
     admin: ["users.read", "users.update"],
-    user: [],
+    user: ["users.read"],
 };
 
 export function can(role: Role, permission: Permission): boolean {

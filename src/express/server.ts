@@ -1,6 +1,6 @@
 import cors from "cors";
 import express from "express";
-import { PrismaUserRepository } from "../repositories/prisma-user.repository";
+import { UserRepository } from "../repositories/user.repository";
 import { AuthService } from "../services/auth.service";
 import { UserService } from "../services/user.service";
 import {
@@ -14,7 +14,7 @@ const app = express();
 app.use(cors({ origin: "http://localhost:3001" }));
 app.use(express.json());
 
-const repo = new PrismaUserRepository();
+const repo = new UserRepository();
 const userService = new UserService(repo);
 const authService = new AuthService(repo);
 const auth = createAuthMiddleware(repo);

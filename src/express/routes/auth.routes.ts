@@ -8,7 +8,7 @@ import {
 import { AppError } from "../../domain/errors";
 import { User } from "../../domain/types";
 import { verifyToken } from "../../lib/jwt";
-import { PrismaUserRepository } from "../../repositories/prisma-user.repository";
+import { UserRepository } from "../../repositories/user.repository";
 import { AuthService } from "../../services/auth.service";
 
 export interface AuthRequest extends Request {
@@ -16,7 +16,7 @@ export interface AuthRequest extends Request {
 }
 
 export function createAuthMiddleware(
-  repo: PrismaUserRepository
+  repo: UserRepository
 ): RequestHandler {
   return async (
     req: AuthRequest,

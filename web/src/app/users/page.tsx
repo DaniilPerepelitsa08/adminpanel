@@ -2,8 +2,21 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { getAllUsers, PublicUser, updateUser } from "@/lib/api";
+import {
+  createUser,
+  deleteUser,
+  getAllUsers,
+  PublicUser,
+  updateUser,
+} from "@/lib/api";
+
+import { can } from "@/lib/permissions";
 import styles from "./users.module.css";
+import UsersHeader from "./components/UsersHeader";
+import UsersTable from "./components/UsersTable";
+import EditUserModal from "./components/EditUserModal";
+import AddUserModal from "./components/AddUserModal";
+import DeleteUserModal from "./components/DeleteUserModal";
 
 type StoredUser = {
   id: number;
@@ -12,6 +25,8 @@ type StoredUser = {
   role: string;
 };
 
+type Role = PublicUser["role"];
+
 export default function UsersPage() {
   const router = useRouter();
   const [user, setUser] = useState<StoredUser | null>(null);
@@ -19,6 +34,16 @@ export default function UsersPage() {
   const [loading, setLoading] = useState(true);
   const [editUser, setEditUser] = useState<PublicUser | null>(null);
   const [editName, setEditName] = useState("");
+  const [editRole, setEditRole] = useState<Role>("user");
+  const [deleteTarget, setDeleteTarget] = useState<PublicUser | null>(null);
+  const [actionError, setActionError] = useState("");
+  const [deleting, setDeleting] = useState(false);
+  const [isAddOpen, setIsAddOpen] = useState(false);
+
+  const canUpdate = user ? can(user.role, "users.update") : false;
+  const canDelete = user ? can(user.role, "users.delete") : false;
+  const canCreate = user ? can(user.role, "users.create") : false;
+  const canChangeRole = user ? user.role === "superadmin" : false;
 
   async function loadUsers() {
     try {
@@ -37,33 +62,107 @@ export default function UsersPage() {
     router.replace("/login");
   }
 
-  function openEdit(user: PublicUser) {
-    setEditUser(user);
-    setEditName(user.name);
-  }
-
-  function formatDate(value: string): string {
-    return new Date(value).toLocaleDateString("en-GB", {
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
-    });
+  function openEdit(item: PublicUser) {
+    setActionError("");
+    setEditUser(item);
+    setEditName(item.name);
+    setEditRole(item.role);
   }
 
   function closeEdit() {
     setEditUser(null);
     setEditName("");
+    setEditRole("user");
+    setActionError("");
+  }
+
+  function openAddNewUser() {
+    setActionError("");
+    setIsAddOpen(true);
+  }
+
+  function closeAddNewUser() {
+    setIsAddOpen(false);
+    setActionError("");
+  }
+
+  function openDelete(item: PublicUser) {
+    setActionError("");
+    setDeleteTarget(item);
+  }
+
+  function closeDelete() {
+    if (deleting) return;
+
+    setDeleteTarget(null);
+    setActionError("")
+  }
+
+  async function addNewUser(data: {
+    name: string;
+    email: string;
+    password: string;
+    role: string;
+  }) {
+    if (!user) return;
+
+    if (!can(user.role, "users.create")) {
+      setActionError("Missing permission: users.create");
+      return;
+    }
+
+    try {
+      setActionError("");
+      await createUser(data.name, data.email, data.password, data.role);
+      await loadUsers();
+      closeAddNewUser();
+    } catch (e) {
+      console.error(e);
+      setActionError(e instanceof Error ? e.message : "Failed to create user");
+    }
   }
 
   async function saveEdit() {
-    if (!editUser) return;
-    try {
-      await updateUser(editUser.id, editName);
-      await loadUsers();
+    if (!editUser || !user) return;
 
+    if (!can(user.role, "users.update")) {
+      setActionError("Missing permission: users.update");
+      return;
+    }
+
+    try {
+      setActionError("");
+      await updateUser(editUser.id, {
+        name: editName,
+        ...(canChangeRole ? { role: editRole } : {}),
+      });
+      await loadUsers();
       closeEdit();
     } catch (e) {
       console.error(e);
+      setActionError(e instanceof Error ? e.message : "Failed to update user");
+    }
+  }
+
+  async function confirmDelete() {
+    if (!deleteTarget || !user) return;
+
+    if (!can(user.role, "users.delete")) {
+      setActionError("Missing permission: users.delete");
+      return;
+    }
+
+    try {
+      setDeleting(true);
+      setActionError("");
+      await deleteUser(deleteTarget.id);
+      await loadUsers();
+      setDeleteTarget(null);
+    } catch (e) {
+      console.error(e);
+      setActionError(e instanceof Error ? e.message : "Failed to delete user");
+    } finally {
+      setDeleting(false);
     }
   }
 
@@ -82,7 +181,6 @@ export default function UsersPage() {
       localStorage.removeItem("token");
       localStorage.removeItem("user");
       router.replace("/login");
-
       return;
     }
 
@@ -99,105 +197,50 @@ export default function UsersPage() {
 
   return (
     <main className={styles.page}>
-      <header className={styles.header}>
-        <div>
-          <h1 className={styles.title}>Users</h1>
-          <p className={styles.muted}>
-            Signed in as {user.name} ({user.role})
-          </p>
-        </div>
-        <button className={styles.logout} type="button" onClick={logout}>
-          Log out
-        </button>
-      </header>
+      <UsersHeader name={user.name} role={user.role} onLogout={logout} />
 
-      <section className={styles.card}>
-        <div className={styles.cardHeader}>
-          <h2 className={styles.cardTitle}>All users</h2>
-          <span className={styles.count}>{usersList.length} total</span>
-        </div>
+      <UsersTable
+        users={usersList}
+        currentUserId={user.id}
+        loading={loading}
+        canCreate={canCreate}
+        canUpdate={canUpdate}
+        canDelete={canDelete}
+        onAdd={openAddNewUser}
+        onEdit={openEdit}
+        onDelete={openDelete}
+      />
 
-        {loading ? (
-          <p className={styles.muted}>Loading users...</p>
-        ) : usersList.length === 0 ? (
-          <p className={styles.muted}>No users found.</p>
-        ) : (
-          <div className={styles.tableWrap}>
-            <table className={styles.table}>
-              <thead>
-                <tr>
-                  <th>ID</th>
-                  <th>Name</th>
-                  <th>Email</th>
-                  <th>Role</th>
-                  <th>Created</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {usersList.map((item) => (
-                  <tr key={item.id}>
-                    <td className={styles.idCell}>{item.id}</td>
-                    <td>{item.name}</td>
-                    <td className={styles.emailCell}>{item.email}</td>
-                    <td>
-                      <span
-                        className={`${styles.badge} ${styles[`role_${item.role}`]}`}
-                      >
-                        {item.role}
-                      </span>
-                    </td>
-                    <td className={styles.dateCell}>
-                      {formatDate(item.createdAt)}
-                    </td>
-                    <td>
-                      <div className={styles.actions}>
-                        <button type="button" className={styles.edit} onClick={() => openEdit(item)}>
-                          Edit
-                        </button>
-                        <button className={styles.delete} type="button">
-                          Delete
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+      {editUser ? (
+        <EditUserModal
+          user={editUser}
+          name={editName}
+          role={editRole}
+          canChangeRole={canChangeRole}
+          error={actionError}
+          onNameChange={setEditName}
+          onRoleChange={setEditRole}
+          onSave={saveEdit}
+          onClose={closeEdit}
+        />
+      ) : null}
 
-            {editUser ? (
-                <div className={styles.overlay} onClick={closeEdit}>
-                  <div
-                      className={styles.modal}
-                      onClick={(e) => e.stopPropagation()}
-                  >
-                    <h2 className={styles.modalTitle}>Edit user</h2>
-                    <p className={styles.muted}>{editUser.email}</p>
+      {deleteTarget ? (
+          <DeleteUserModal
+              deleteTarget={deleteTarget}
+              actionError={actionError}
+              confirmDelete={confirmDelete}
+              closeDelete={closeDelete}
+              deleting={deleting}
+          />) : null}
 
-                    <label className={styles.label}>
-                      Name
-                      <input
-                          className={styles.input}
-                          type="text"
-                          value={editName}
-                          onChange={(e) => setEditName(e.target.value)}
-                      />
-                    </label>
-
-                    <div className={styles.modalActions}>
-                      <button type="button" className={styles.cancel} onClick={closeEdit}>
-                        Cancel
-                      </button>
-                      <button type="button" className={styles.save} onClick={saveEdit}>
-                        Save
-                      </button>
-                    </div>
-                  </div>
-                </div>
-            ) : null}
-          </div>
-        )}
-      </section>
+      {isAddOpen ? (
+        <AddUserModal
+          error={actionError}
+          onClose={closeAddNewUser}
+          onSubmit={addNewUser}
+        />
+      ) : null}
     </main>
   );
 }
